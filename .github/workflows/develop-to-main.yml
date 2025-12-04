@@ -1,5 +1,7 @@
 name: REACION DE RELEASE AUTOMATICA
 run-name: CREACION DE RELEASE AUTOMATICA ${{ github.run_number }}
+permissions:
+  contents: write
 on:
   pull_request:
     types:
