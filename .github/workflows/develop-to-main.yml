@@ -31,7 +31,7 @@ jobs:
           fi
       - name: Additional steps
         run: |
-          echo "Aquí agregar más pasos según sea necesario."
+          echo "Aquí agregar más pasos según sea necesario test hotfix."
 
       - name: Set up Python
         uses: actions/setup-python@v4
