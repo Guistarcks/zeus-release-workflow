@@ -1,5 +1,5 @@
-name: Workflow on Merge Develop to Main
-
+name: REACION DE RELEASE AUTOMATICA 
+runs-name: CREACION DE RELEASE AUTOMATICA ${{ github.run_number }}
 on:
   pull_request:
     types:
