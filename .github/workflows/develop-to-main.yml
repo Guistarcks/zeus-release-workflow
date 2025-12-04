@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "Aquí puedes agregar más pasos según sea necesario."
      
-     - name: Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'  # Asegúrate de que esté en la versión correcta
