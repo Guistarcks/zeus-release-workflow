@@ -8,17 +8,22 @@ def crear_tag_y_release(repo, version, nombre_release, descripcion, commits=None
     :param version: La versión para el nuevo tag (por ejemplo, 'v1.0.0').
     :param nombre_release: El nombre del release.
     :param descripcion: Descripción del release.
-    :param commits: Lista de commits en formato ['hash mensaje', ...]
+    :param commits: String de commits delimitados por '|||', cada uno en formato 'hash mensaje'
     """
     changelog = ""
     if commits:
+        if isinstance(commits, list):
+            commits_str = commits[0] if commits else ""
+        else:
+            commits_str = commits
+        commit_lines = [c for c in commits_str.split('|||') if c.strip()]
         features = []
         fixes = []
         improvements = []
         chores = []
         breaking = []
         others = []
-        for line in commits:
+        for line in commit_lines:
             parts = line.strip().split(' ', 1)
             if len(parts) != 2:
                 continue
@@ -63,7 +68,7 @@ def main():
     parser.add_argument('--version', required=True, help='Tag/version para el release')
     parser.add_argument('--nombre_release', required=True, help='Nombre del release')
     parser.add_argument('--descripcion', required=True, help='Descripción del release')
-    parser.add_argument('--commits', nargs='*', help='Lista de commits en formato "hash mensaje"')
+    parser.add_argument('--commits', help='String de commits delimitados por "|||"')
     args = parser.parse_args()
 
     # Crear tag y release
