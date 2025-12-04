@@ -24,7 +24,7 @@ jobs:
           elif [[ "${{ github.event.pull_request.head.ref }}" == "release" ]]; then
             echo "Se ha hecho merge de un PR de release a main."
           fi
-     - name: Additional steps
+      - name: Additional steps
         run: |
           echo "Aquí puedes agregar más pasos según sea necesario."
      
