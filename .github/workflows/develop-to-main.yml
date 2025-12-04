@@ -53,8 +53,12 @@ jobs:
             echo "ERROR: No se pudo extraer la versión del nombre de la rama (${GITHUB_HEAD_REF:-${{ github.event.pull_request.head.ref }}})"
             exit 1
           fi
+          # Obtener historial de commits entre main y la rama de release
+          git fetch origin main "${{ github.event.pull_request.head.ref }}"
+          CHANGELOG=$(git log --pretty=format:"- %s" origin/main..origin/${{ github.event.pull_request.head.ref }})
+          DESCRIPCION="Release generado automáticamente desde ${{ github.event.pull_request.head.ref }}%0A%0AHistorial de cambios:%0A$CHANGELOG"
           python .github/workflows/scripts/crear_release.py \
             --repo "${{ github.repository }}" \
             --version "$VERSION" \
             --nombre_release "Release $VERSION" \
-            --descripcion "Release generado automáticamente desde ${{ github.event.pull_request.head.ref }}"
+            --descripcion "$DESCRIPCION"
