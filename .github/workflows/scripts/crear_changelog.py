@@ -6,31 +6,31 @@ def obtener_fecha_actual():
     return datetime.datetime.now().strftime("%Y-%m-%d")
 
 def obtener_changelog_path():
-    """Devuelve la ruta al archivo CHANGELOG.md."""
-    return "CHANGELOG.md"
+    """Devuelve la ruta absoluta al archivo CHANGELOG.md en la raíz del repositorio."""
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(repo_root, "CHANGELOG.md")
 
-def crear_o_actualizar_changelog(version, descripcion, changelog_path):
+def crear_o_actualizar_changelog(version, descripcion, changelog_path, commits=None):
     """Crea o actualiza el archivo CHANGELOG.md con la nueva entrada de release."""
     fecha_actual = obtener_fecha_actual()
 
+    # Agregar commits al final de la descripción si existen
+    if commits:
+        descripcion += "\n\n### Commits recientes\n" + commits + "\n"
+
     # Verificar si el changelog ya existe
     if os.path.exists(changelog_path):
-        # Si el changelog existe, leerlo
         with open(changelog_path, 'r') as f:
             changelog_contenido = f.read()
-
-        # Verificar si la versión ya está registrada (para evitar duplicados)
         if f"## [{version}]" in changelog_contenido:
             print(f"El changelog ya contiene una entrada para la versión {version}.")
             return
         else:
-            # Agregar una nueva entrada al final
             with open(changelog_path, 'a') as f:
                 f.write(f"\n## [{version}] - {fecha_actual}\n")
                 f.write(f"{descripcion}\n")
             print(f"Changelog actualizado con la versión {version}.")
     else:
-        # Si el changelog no existe, crearlo desde cero
         with open(changelog_path, 'w') as f:
             f.write("# Changelog\n\n")
             f.write("Todas las novedades de este proyecto seguirán el formato del changelog.\n\n")
@@ -65,15 +65,21 @@ def generar_descripcion_release(version):
     return descripcion
 
 def main():
-    # Variables necesarias
-    version = "v1.0.0"  # Cambia esto según el release que estás manejando
+    import argparse
+    parser = argparse.ArgumentParser(description='Crear o actualizar el CHANGELOG.md')
+    parser.add_argument('--version', required=True, help='Tag/version para el changelog')
+    parser.add_argument('--commits', help='Commits recientes para agregar al changelog')
+    args = parser.parse_args()
+
+    version = args.version
     changelog_path = obtener_changelog_path()
+    commits = args.commits
 
     # Generar la descripción para el changelog
     descripcion = generar_descripcion_release(version)
 
     # Crear o actualizar el changelog
-    crear_o_actualizar_changelog(version, descripcion, changelog_path)
+    crear_o_actualizar_changelog(version, descripcion, changelog_path, commits)
 
 if __name__ == "__main__":
     main()
