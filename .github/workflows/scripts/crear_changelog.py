@@ -69,6 +69,7 @@ def main():
     parser = argparse.ArgumentParser(description='Crear o actualizar el CHANGELOG.md')
     parser.add_argument('--version', required=True, help='Tag/version para el changelog')
     parser.add_argument('--commits', help='Commits recientes para agregar al changelog')
+    parser.add_argument('--pr-body', help='Cuerpo del Pull Request con las notas del release')
     args = parser.parse_args()
 
     version = args.version
@@ -76,7 +77,11 @@ def main():
     commits = args.commits
 
     # Generar la descripción para el changelog
-    descripcion = generar_descripcion_release(version)
+    # Si se proporciona el cuerpo del PR, usarlo; sino usar la plantilla genérica
+    if args.pr_body and args.pr_body.strip():
+        descripcion = args.pr_body
+    else:
+        descripcion = generar_descripcion_release(version)
 
     # Crear o actualizar el changelog
     crear_o_actualizar_changelog(version, descripcion, changelog_path, commits)
