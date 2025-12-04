@@ -67,4 +67,24 @@ jobs:
         run: |
           VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
           COMMITS=$(git log --all --since='7 days ago' --oneline --format="* %h %s (%an) %as")
-          python .github/workflows/scripts/crear_changelog.py --version "$VERSION" --commits "$COMMITS"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          python .github/workflows/scripts/crear_changelog.py --version "$VERSION" --commits "$COMMITS" --pr-body "$PR_BODY"
+
+      - name: Configurar Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit y push del CHANGELOG.md
+        run: |
+          VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          git add CHANGELOG.md
+          git commit -m "chore: actualizar CHANGELOG.md para versión $VERSION" || echo "No hay cambios en CHANGELOG.md"
+          git push origin main
+
+      - name: Sincronizar CHANGELOG.md con develop
+        run: |
+          git fetch origin develop
+          git checkout develop
+          git merge origin/main -m "chore: sincronizar CHANGELOG.md desde main"
+          git push origin develop
