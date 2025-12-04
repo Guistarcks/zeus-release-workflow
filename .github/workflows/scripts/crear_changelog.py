@@ -7,7 +7,7 @@ def obtener_fecha_actual():
 
 def obtener_changelog_path():
     """Devuelve la ruta absoluta al archivo CHANGELOG.md en la raíz del repositorio."""
-    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     return os.path.join(repo_root, "CHANGELOG.md")
 
 def crear_o_actualizar_changelog(version, descripcion, changelog_path, commits=None):

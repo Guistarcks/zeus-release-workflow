@@ -65,5 +65,6 @@ jobs:
 
       - name: Crear o actualizar CHANGELOG.md
         run: |
+          VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
           COMMITS=$(git log --all --since='7 days ago' --oneline --format="* %h %s (%an) %as")
           python .github/workflows/scripts/crear_changelog.py --version "$VERSION" --commits "$COMMITS"
