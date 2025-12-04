@@ -1,5 +1,5 @@
 name: REACION DE RELEASE AUTOMATICA 
-runs-name: CREACION DE RELEASE AUTOMATICA ${{ github.run_number }}
+run-name: CREACION DE RELEASE AUTOMATICA ${{ github.run_number }}
 on:
   pull_request:
     types:
