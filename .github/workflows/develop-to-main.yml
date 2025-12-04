@@ -1,5 +1,5 @@
-name: Workflow on Merge Develop to Main
-
+name: REACION DE RELEASE AUTOMATICA 
+runs-name: CREACION DE RELEASE AUTOMATICA ${{ github.run_number }}
 on:
   pull_request:
     types:
@@ -40,7 +40,6 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          pip install subprocess
 
       # 4. Crear un tag y release con el script Python
       - name: Crear tag y release
@@ -53,5 +52,3 @@ jobs:
           --version "$VERSION" \
           --nombre_release "Release $VERSION" \
           --descripcion "Release generado automáticamente desde ${{ github.event.pull_request.head.ref }}"
-
-
