@@ -1,0 +1,54 @@
+name: Workflow on Merge Develop to Main
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  run-on-merge:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      (github.event.pull_request.head.ref == 'develop' || github.event.pull_request.head.ref == 'release')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Print message
+        run: |
+          if [[ "${{ github.event.pull_request.head.ref }}" == "develop" ]]; then
+            echo "Se ha hecho merge de un PR de develop a main."
+          elif [[ "${{ github.event.pull_request.head.ref }}" == "release" ]]; then
+            echo "Se ha hecho merge de un PR de release a main."
+          fi
+     - name: Additional steps
+        run: |
+          echo "Aquí puedes agregar más pasos según sea necesario."
+     
+     - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'  # Asegúrate de que esté en la versión correcta
+
+      # 3. Instalar dependencias necesarias
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install subprocess
+
+      # 4. Crear un tag y release con el script Python
+      - name: Crear tag y release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # El token de autenticación de GitHub Actions
+        run: |
+          VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE 'v[0-9]+\\.[0-9]+\\.[0-9]+')
+          python .github/workflows/scripts/crear_release.py \
+          --repo "${{ github.repository }}" \
+          --version "$VERSION" \
+          --nombre_release "Release $VERSION" \
+          --descripcion "Release generado automáticamente desde ${{ github.event.pull_request.head.ref }}"
+
+            
