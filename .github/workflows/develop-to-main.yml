@@ -50,7 +50,7 @@ jobs:
         run: |
           VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
           if [ -z "$VERSION" ] || [ "$VERSION" = "v" ]; then
-            echo "ERROR: No se pudo extraer la versión del nombre de la rama (${GITHUB_HEAD_REF:-${{ github.event.pull_request.head.ref }}})"
+            echo "ERROR:No se pudo extraer la versión del nombre de la rama (${GITHUB_HEAD_REF:-${{ github.event.pull_request.head.ref }}})"
             exit 1
           fi
           # Obtener historial de commits entre main y la rama de release
