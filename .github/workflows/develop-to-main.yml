@@ -87,9 +87,27 @@ jobs:
           git commit -m "chore: actualizar CHANGELOG.md para versión $VERSION" || echo "No hay cambios en CHANGELOG.md"
           git push origin main
 
-      - name: Sincronizar CHANGELOG.md con develop
+      - name: Sincronizar archivos modificados con develop
         run: |
           git fetch origin develop
           git checkout develop
-          git merge origin/main -m "chore: sincronizar CHANGELOG.md desde main" --allow-unrelated-histories
-          git push origin develop
+
+          # Identificar archivos modificados en main que no están en develop
+          MODIFIED_FILES=$(git diff --name-only develop origin/main)
+
+          if [ -n "$MODIFIED_FILES" ]; then
+            echo "Archivos modificados detectados:"
+            echo "$MODIFIED_FILES"
+
+            # Copiar solo los archivos modificados desde main
+            for file in $MODIFIED_FILES; do
+              echo "Sincronizando: $file"
+              git checkout origin/main -- "$file"
+            done
+
+            git add .
+            git commit -m "chore: sincronizar archivos modificados desde main" || echo "No hay cambios para commitear"
+            git push origin develop
+          else
+            echo "No hay archivos modificados para sincronizar"
+          fi
