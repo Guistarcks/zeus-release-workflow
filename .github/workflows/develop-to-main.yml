@@ -15,7 +15,7 @@ jobs:
       github.event.pull_request.merged == true &&
       github.event.pull_request.base.ref == 'main' &&
       (
-        github.event.pull_request.head.ref == 'develop' ||
+        startsWith(github.event.pull_request.head.ref, 'hotfix') ||
         startsWith(github.event.pull_request.head.ref, 'release')
       )
     runs-on: ubuntu-latest
@@ -24,9 +24,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Print message
         run: |
-          if [[ "${{ github.event.pull_request.head.ref }}" == "develop" ]]; then
-            echo "Se ha hecho merge de un PR de develop a main."
-          elif [[ "${{ github.event.pull_request.head.ref }}" == "release" ]]; then
+          if [[ "${{ github.event.pull_request.head.ref }}" == hotfix* ]]; then
+            echo "Se ha hecho merge de un PR de hotfix a main."
+          elif [[ "${{ github.event.pull_request.head.ref }}" == release* ]]; then
             echo "Se ha hecho merge de un PR de release a main."
           fi
       - name: Additional steps
@@ -55,8 +55,14 @@ jobs:
           fi
           # Obtener historial de commits entre main y la rama de release
           git fetch origin main "${{ github.event.pull_request.head.ref }}"
-          CHANGELOG=$(git log --pretty=format:"%s" origin/main..origin/${{ github.event.pull_request.head.ref }})
-          DESCRIPCION="Release generado automáticamente desde ${{ github.event.pull_request.head.ref }} $CHANGELOG"
+          CHANGELOG=$(git log --pretty=format:"%h %s (%an) %as" origin/main..origin/${{ github.event.pull_request.head.ref }})
+          DESCRIPCION=$(cat <<EOF
+          Release generado automáticamente desde ${{ github.event.pull_request.head.ref }}
+
+          ## Commits incluidos:
+          $CHANGELOG
+          EOF
+          )
           python .github/workflows/scripts/crear_release.py \
             --repo "${{ github.repository }}" \
             --version "$VERSION" \
@@ -66,9 +72,8 @@ jobs:
       - name: Crear o actualizar CHANGELOG.md
         run: |
           VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-          COMMITS=$(git log --all --since='7 days ago' --oneline --format="* %h %s (%an) %as")
           PR_BODY="${{ github.event.pull_request.body }}"
-          python .github/workflows/scripts/crear_changelog.py --version "$VERSION" --commits "$COMMITS" --pr-body "$PR_BODY"
+          python .github/workflows/scripts/crear_changelog.py --version "$VERSION" --pr-body "$PR_BODY"
 
       - name: Configurar Git
         run: |
@@ -86,5 +91,5 @@ jobs:
         run: |
           git fetch origin develop
           git checkout develop
-          git merge origin/main -m "chore: sincronizar CHANGELOG.md desde main"
+          git merge origin/main -m "chore: sincronizar CHANGELOG.md desde main" --allow-unrelated-histories
           git push origin develop
