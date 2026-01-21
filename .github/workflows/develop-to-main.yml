@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Historial completo para merges correctos
       - name: Print message
         run: |
           if [[ "${{ github.event.pull_request.head.ref }}" == hotfix* ]]; then
@@ -96,19 +98,23 @@ jobs:
 
       - name: Sincronizar main con develop (GitFlow)
         run: |
-          git fetch origin develop main
+          git fetch origin develop main --unshallow 2>/dev/null || git fetch origin develop main
           git checkout develop
 
           # Merge de main a develop (práctica estándar de GitFlow)
-          if git merge origin/main -m "chore: merge main into develop after ${{ github.event.pull_request.head.ref }}" --no-edit; then
+          # --allow-unrelated-histories por si las ramas no comparten ancestro
+          if git merge origin/main \
+            --allow-unrelated-histories \
+            -m "chore: merge main into develop after ${{ github.event.pull_request.head.ref }}" \
+            --no-edit; then
             git push origin develop
             echo "Sincronización completada exitosamente"
           else
             echo "Conflicto detectado durante el merge"
             # Mostrar archivos en conflicto
-            git diff --name-only --diff-filter=U
-            # Abortar merge y notificar
-            git merge --abort
+            git diff --name-only --diff-filter=U || true
+            # Abortar merge si existe
+            git merge --abort 2>/dev/null || true
             echo "::error::Merge automático falló. Se requiere resolución manual de conflictos."
             exit 1
           fi
