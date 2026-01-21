@@ -46,34 +46,41 @@ jobs:
       # 4. Crear un tag y release con el script Python
       - name: Crear tag y release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # El token de autenticación de GitHub Actions
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
           if [ -z "$VERSION" ] || [ "$VERSION" = "v" ]; then
-            echo "ERROR:No se pudo extraer la versión del nombre de la rama (${GITHUB_HEAD_REF:-${{ github.event.pull_request.head.ref }}})"
+            echo "ERROR: No se pudo extraer la versión del nombre de la rama (${{ github.event.pull_request.head.ref }})"
             exit 1
           fi
-          # Obtener historial de commits entre main y la rama de release
-          git fetch origin main "${{ github.event.pull_request.head.ref }}"
-          CHANGELOG=$(git log --pretty=format:"%h %s (%an) %as" origin/main..origin/${{ github.event.pull_request.head.ref }})
-          DESCRIPCION=$(cat <<EOF
-          Release generado automáticamente desde ${{ github.event.pull_request.head.ref }}
 
-          ## Commits incluidos:
-          $CHANGELOG
-          EOF
-          )
+          # Determinar tipo de release
+          if [[ "${{ github.event.pull_request.head.ref }}" == hotfix* ]]; then
+            RELEASE_TYPE="Hotfix"
+          else
+            RELEASE_TYPE="Release"
+          fi
+
           python .github/workflows/scripts/crear_release.py \
             --repo "${{ github.repository }}" \
             --version "$VERSION" \
-            --nombre_release "Release $VERSION" \
-            --descripcion "$DESCRIPCION"
+            --nombre_release "$RELEASE_TYPE $VERSION" \
+            --pr-title "${{ github.event.pull_request.title }}" \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --pr-body "${{ github.event.pull_request.body }}" \
+            --branch "${{ github.event.pull_request.head.ref }}"
 
       - name: Crear o actualizar CHANGELOG.md
         run: |
           VERSION=v$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-          PR_BODY="${{ github.event.pull_request.body }}"
-          python .github/workflows/scripts/crear_changelog.py --version "$VERSION" --pr-body "$PR_BODY"
+
+          python .github/workflows/scripts/crear_changelog.py \
+            --version "$VERSION" \
+            --pr-title "${{ github.event.pull_request.title }}" \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --pr-body "${{ github.event.pull_request.body }}" \
+            --branch "${{ github.event.pull_request.head.ref }}" \
+            --repo "${{ github.repository }}"
 
       - name: Configurar Git
         run: |
@@ -87,27 +94,21 @@ jobs:
           git commit -m "chore: actualizar CHANGELOG.md para versión $VERSION" || echo "No hay cambios en CHANGELOG.md"
           git push origin main
 
-      - name: Sincronizar archivos modificados con develop
+      - name: Sincronizar main con develop (GitFlow)
         run: |
-          git fetch origin develop
+          git fetch origin develop main
           git checkout develop
 
-          # Identificar archivos modificados en main que no están en develop
-          MODIFIED_FILES=$(git diff --name-only develop origin/main)
-
-          if [ -n "$MODIFIED_FILES" ]; then
-            echo "Archivos modificados detectados:"
-            echo "$MODIFIED_FILES"
-
-            # Copiar solo los archivos modificados desde main
-            for file in $MODIFIED_FILES; do
-              echo "Sincronizando: $file"
-              git checkout origin/main -- "$file"
-            done
-
-            git add .
-            git commit -m "chore: sincronizar archivos modificados desde main" || echo "No hay cambios para commitear"
+          # Merge de main a develop (práctica estándar de GitFlow)
+          if git merge origin/main -m "chore: merge main into develop after ${{ github.event.pull_request.head.ref }}" --no-edit; then
             git push origin develop
+            echo "Sincronización completada exitosamente"
           else
-            echo "No hay archivos modificados para sincronizar"
+            echo "Conflicto detectado durante el merge"
+            # Mostrar archivos en conflicto
+            git diff --name-only --diff-filter=U
+            # Abortar merge y notificar
+            git merge --abort
+            echo "::error::Merge automático falló. Se requiere resolución manual de conflictos."
+            exit 1
           fi
